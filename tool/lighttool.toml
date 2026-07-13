@@ -1,6 +1,6 @@
 [tool]
-id = "com.thelightphone.app"
-label = "Light SDK Tool"
+id = "com.thelightphone.hey"
+label = "HEY"
 versionCode = 1
 versionName = "1.0"
 permissions = ["android.permission.INTERNET"]

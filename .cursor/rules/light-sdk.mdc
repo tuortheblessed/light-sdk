@@ -1,0 +1,47 @@
+---
+description: Light Phone SDK tool development constraints
+alwaysApply: true
+---
+
+# Light SDK tool rules
+
+You are working in the official [light-sdk](https://github.com/lightphone/light-sdk) scaffold. Custom apps are **tools** built inside `:tool`, not blank Android apps.
+
+## Where to edit
+
+- Write app code in `tool/` (and study `examples/` for patterns).
+- Put id/label/version/permissions in `tool/lighttool.toml` — never set `applicationId`, `versionCode`, `versionName`, or `namespace` in Gradle.
+- Do not casually change `:plugin` allowlists or lint rules if the tool should stay Light-signable later.
+
+## Architecture
+
+- Kotlin + Compose + Coroutines + MVVM.
+- Screens extend `LightScreen` / `SimpleLightScreen`; VMs extend `LightViewModel`.
+- Exactly one `@InitialScreen`. Navigate with `navigateTo(::OtherScreen)`; return with `goBack(result)`.
+- Prefer `com.thelightphone.sdk.ui.*` (`LightText`, `LightIcon`, `LightTheme`, `lightClickable`, …).
+- Background work: `@LightJob` + `LightWork`. Optional `@EntryPoint` for app-wide setup/push.
+
+## Hard blocks (build will fail)
+
+Do **not** use: Activities/Intents, `LocalContext` / `LocalView` / `LocalLifecycleOwner`, `startActivity`, `getSystemService`, `contentResolver`, reflection, custom `BroadcastReceiver`/`Service` wiring.
+
+Allowed deps include Compose, Coroutines, OkHttp, Ktor, Room, WorkManager, DataStore, UnifiedPush, kotlinx-serialization. Anything else needs an allowlist change upstream.
+
+Allowed permissions (in `lighttool.toml` only): INTERNET, ACCESS_NETWORK_STATE, WAKE_LOCK, VIBRATE, POST_NOTIFICATIONS, CAMERA, RECORD_AUDIO, READ_MEDIA_AUDIO, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, NFC.
+
+## Patterns
+
+```kotlin
+@InitialScreen
+class HomeScreen(activity: SealedLightActivity) : LightScreen<Unit, HomeScreenViewModel>(activity) {
+    override val viewModelClass = HomeScreenViewModel::class.java
+    override fun createViewModel() = HomeScreenViewModel()
+    @Composable override fun Content() { /* LightTheme + LightText */ }
+}
+```
+
+Copy structure from `examples/ui-demo`, `examples/weather`, or `examples/authenticator`.
+
+## Upstream PRs
+
+Light expects human-owned issues/PRs; keep comments brief and in your voice. See `CONTRIBUTING.md`.

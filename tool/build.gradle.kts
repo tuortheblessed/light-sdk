@@ -28,6 +28,10 @@ android {
         manifestPlaceholders["sdkVersion"] = property("sdkVersion") as String
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("lightsdkDev")
@@ -60,5 +64,4 @@ kotlin {
 dependencies {
     implementation(project(":sdk:client"))
     testImplementation(libs.kotlin.test)
-    ksp(libs.androidx.room.compiler)
 }
