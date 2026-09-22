@@ -19,6 +19,7 @@ data class TextEditorRequest(
     val initialValue: String = "",
     val submitLabel: String = "SUBMIT",
     val editorKey: Any = title,
+    val initialCaps: Boolean = true,
 )
 
 class TextEditorScreen(
@@ -38,6 +39,7 @@ class TextEditorScreen(
                 keyboardOptionsFlow = keyboardOptionsFlow,
                 submitLabel = request.submitLabel,
                 editorKey = request.editorKey,
+                initialCaps = request.initialCaps,
                 onSubmit = { result -> goBack(result.toString()) },
                 onBack = { goBack(null) },
                 modifier = Modifier.background(LightThemeTokens.colors.background),

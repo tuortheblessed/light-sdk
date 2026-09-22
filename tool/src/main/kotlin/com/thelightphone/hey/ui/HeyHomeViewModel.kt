@@ -4,14 +4,18 @@ import androidx.lifecycle.viewModelScope
 import com.thelightphone.hey.AuthRequiredException
 import com.thelightphone.hey.DayOverview
 import com.thelightphone.hey.HabitItem
+import com.thelightphone.hey.HeyEntryPoint
 import com.thelightphone.hey.HeyRepository
 import com.thelightphone.hey.TodoItem
+import com.thelightphone.hey.auth.AuthTokenImport
+import com.thelightphone.sdk.LightFileShare
 import com.thelightphone.sdk.LightViewModel
 import com.thelightphone.sdk.SimpleLightScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 sealed class HomeUiState {
@@ -23,6 +27,7 @@ sealed class HomeUiState {
 
 class HeyHomeViewModel(
     private val repository: HeyRepository,
+    private val fileShare: LightFileShare,
 ) : LightViewModel<Unit>() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -34,13 +39,28 @@ class HeyHomeViewModel(
     @Volatile
     private var loadGeneration = 0
 
+    init {
+        viewModelScope.launch {
+            HeyEntryPoint.authImportGeneration.drop(1).collect {
+                importAuthAndRefresh()
+            }
+        }
+    }
+
     override fun onScreenShow(screen: SimpleLightScreen<Unit>) {
         // App resume and back-navigation both hit show. Refresh quietly when we
         // already have data so external HEY changes (e.g. uncomplete elsewhere) appear
         // without a full loading flash. There is no background poll while idle.
-        when (_uiState.value) {
-            is HomeUiState.Ready -> viewModelScope.launch(Dispatchers.IO) { refreshQuiet() }
-            else -> refresh()
+        importAuthAndRefresh()
+    }
+
+    private fun importAuthAndRefresh() {
+        viewModelScope.launch(Dispatchers.IO) {
+            AuthTokenImport.importIfPresent(fileShare, repository)
+            when (_uiState.value) {
+                is HomeUiState.Ready -> refreshQuiet()
+                else -> refresh()
+            }
         }
     }
 

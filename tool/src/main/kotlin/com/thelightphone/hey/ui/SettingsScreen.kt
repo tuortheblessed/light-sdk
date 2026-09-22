@@ -16,7 +16,9 @@ import androidx.lifecycle.viewModelScope
 import com.thelightphone.hey.BuildConfig
 import com.thelightphone.hey.HeyRepository
 import com.thelightphone.hey.auth.AuthPreferences
+import com.thelightphone.hey.auth.AuthTokenImport
 import com.thelightphone.hey.auth.HeyCredentials
+import com.thelightphone.sdk.LightFileShare
 import com.thelightphone.sdk.LightScreen
 import com.thelightphone.sdk.LightViewModel
 import com.thelightphone.sdk.SealedLightActivity
@@ -45,6 +47,7 @@ import kotlinx.coroutines.launch
 class SettingsViewModel(
     private val repository: HeyRepository,
     private val filesDir: File,
+    private val fileShare: LightFileShare,
 ) : LightViewModel<Unit>() {
     private val _accessToken = MutableStateFlow("")
     val accessToken: StateFlow<String> = _accessToken.asStateFlow()
@@ -60,6 +63,7 @@ class SettingsViewModel(
 
     override fun onScreenShow(screen: SimpleLightScreen<Unit>) {
         viewModelScope.launch(Dispatchers.IO) {
+            AuthTokenImport.importIfPresent(fileShare, repository)
             val creds = repository.loadCredentials()
             _accessToken.value = creds.accessToken
             _refreshToken.value = creds.refreshToken
@@ -141,7 +145,8 @@ class SettingsScreen(
     override val viewModelClass: Class<SettingsViewModel>
         get() = SettingsViewModel::class.java
 
-    override fun createViewModel() = SettingsViewModel(repository, lightContext.filesDir)
+    override fun createViewModel() =
+        SettingsViewModel(repository, lightContext.filesDir, lightContext.fileShare)
 
     @Composable
     override fun Content() {
@@ -174,7 +179,7 @@ class SettingsScreen(
                             .padding(horizontal = 1f.gridUnitsAsDp()),
                     ) {
                         LightText(
-                            text = "HEY CLI on a computer: “hey auth login”, then “hey auth token” for ACCESS. Optional lasting login: “hey auth status --json” and paste refresh_token as REFRESH.",
+                            text = "Preferred: Tool Manager → HEY → AUTH, upload access_token.txt from “hey auth token” and optional refresh_token.txt from “hey auth status --json”. Or paste below. CLI: “hey auth login”, then “hey auth token” for ACCESS.",
                             variant = LightTextVariant.Fine,
                             lighten = true,
                         )
@@ -189,7 +194,11 @@ class SettingsScreen(
                                     screenFactory = {
                                         TextEditorScreen(
                                             it,
-                                            TextEditorRequest("ACCESS TOKEN", access),
+                                            TextEditorRequest(
+                                                title = "ACCESS TOKEN",
+                                                initialValue = access,
+                                                initialCaps = false,
+                                            ),
                                         )
                                     },
                                 ) { result ->
@@ -209,7 +218,11 @@ class SettingsScreen(
                                     screenFactory = {
                                         TextEditorScreen(
                                             it,
-                                            TextEditorRequest("REFRESH TOKEN", refresh),
+                                            TextEditorRequest(
+                                                title = "REFRESH TOKEN",
+                                                initialValue = refresh,
+                                                initialCaps = false,
+                                            ),
                                         )
                                     },
                                 ) { result ->

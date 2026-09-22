@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.thelightphone.sdk.NetworkStatus
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -55,13 +56,16 @@ class HeyHomeScreen(sealedActivity: SealedLightActivity) :
     override val viewModelClass: Class<HeyHomeViewModel>
         get() = HeyHomeViewModel::class.java
 
-    override fun createViewModel() = HeyHomeViewModel(repository)
+    override fun createViewModel() = HeyHomeViewModel(repository, lightContext.fileShare)
 
     @Composable
     override fun Content() {
         val themeColors by LightThemeController.colors.collectAsState()
         val uiState by viewModel.uiState.collectAsState()
         val errorModal by viewModel.errorModal.collectAsState()
+        val network by lightContext.connectivity.observeNetworkStatus().collectAsState(
+            initial = NetworkStatus(isConnected = true, isWifi = false, isMetered = false),
+        )
 
         LightTheme(colors = themeColors) {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -83,6 +87,14 @@ class HeyHomeScreen(sealedActivity: SealedLightActivity) :
                         ),
                         modifier = Modifier.padding(bottom = 0.5f.gridUnitsAsDp()),
                     )
+                    if (!network.isConnected) {
+                        LightText(
+                            text = "offline",
+                            variant = LightTextVariant.Fine,
+                            lighten = true,
+                            modifier = Modifier.padding(horizontal = 1f.gridUnitsAsDp()),
+                        )
+                    }
 
                     when (val state = uiState) {
                         HomeUiState.Loading -> {
